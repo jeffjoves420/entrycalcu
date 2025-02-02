@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traidng Entry Spotter</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('https://source.unsplash.com/1600x900/?stock-market,trading') no-repeat center center/cover;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 450px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            background: #333;
+            color: white;
+        }
+        button {
+            background: #ff9800;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e68900;
+        }
+        #result p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Trading Entry Spotter</h2>
+        <label for="trend">Trend:</label>
+        <select id="trend">
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+        </select>
+        <label for="high">High Price:</label>
+        <input type="number" id="high" placeholder="Enter High Price">
+        <label for="low">Low Price:</label>
+        <input type="number" id="low" placeholder="Enter Low Price">
+        <label for="fib">Fibonacci Level (0-1):</label>
+        <input type="number" step="0.01" id="fib" placeholder="Enter Fibonacci Level">
+        <button onclick="calculatePosition()">Calculate</button>
+        <div id="result"></div>
+    </div>
+    <script>
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                calculatePosition();
+            }
+        });
+
+        function calculatePosition() {
+            let trend = document.getElementById("trend").value;
+            let High = parseFloat(document.getElementById("high").value);
+            let Low = parseFloat(document.getElementById("low").value);
+            let Fib = parseFloat(document.getElementById("fib").value);
+            
+            let risk_percentage = 3;
+            let buffer = 0.1;
+            let allowed_risk = risk_percentage + buffer;
+            let Entry_price, Stoploss, Stoploss_percentage, Take_Profit, Takeprofit_percentage, leverage;
+            
+            if (trend === "long") {
+                Entry_price = High - (High - Low) * Fib;
+                Stoploss = Low;
+                Stoploss_percentage = ((Entry_price - Stoploss) / Stoploss) * 100;
+                Take_Profit = High + (High - Low) * 1.13;
+                Takeprofit_percentage = ((Take_Profit - Entry_price) / Entry_price) * 100;
+            } else {
+                Entry_price = Low + (High - Low) * Fib;
+                Stoploss = High;
+                Stoploss_percentage = ((Stoploss - Entry_price) / Entry_price) * 100;
+                Take_Profit = Low - (High - Low) * 1.13;
+                Takeprofit_percentage = ((Entry_price - Take_Profit) / Entry_price) * 100;
+            }
+            
+            leverage = allowed_risk / Stoploss_percentage;
+            leverage = leverage > 0 ? Math.round(leverage) : 0;
+            let multiplied_sl = Stoploss_percentage * leverage;
+            let multiplied_tp = Takeprofit_percentage * leverage;
+            
+            let risk_warning = multiplied_sl > allowed_risk ? `<p style="color: red;">Warning: SL exceeds max risk of 3%!</p>` : `<p style="color: green;">Risk is within limit.</p>`;
+            let tp_warning = multiplied_tp < 10 ? `<p style="color: red;">Warning: TP is too low!</p>` : "";
+            
+            document.getElementById("result").innerHTML = `
+                <p>Entry Price: ${Entry_price.toFixed(2)}</p>
+                <p>Stoploss: ${Stoploss.toFixed(2)} (${Stoploss_percentage.toFixed(2)}%)</p>
+                <p>Take Profit: ${Take_Profit.toFixed(2)} (${Takeprofit_percentage.toFixed(2)}%)</p>
+                <p>Suggested Leverage: ${leverage}x</p>
+                <p>Multiplied Stop Loss: ${multiplied_sl.toFixed(2)}%</p>
+                <p>Multiplied Take Profit: ${multiplied_tp.toFixed(2)}%</p>
+                ${risk_warning}
+                ${tp_warning}
+            `;
+        }
+    </script>
+</body>
+</html>
